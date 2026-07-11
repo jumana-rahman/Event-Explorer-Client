@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
-import { RiArrowRightLine, RiSparklingLine, RiCalendarLine, RiMapPinLine, RiGroupLine, RiCheckLine, RiAddLine, RiMailLine } from 'react-icons/ri';
+import { RiArrowRightLine, RiSparklingLine, RiCalendarLine, RiMapPinLine, RiGroupLine, RiMailLine } from 'react-icons/ri';
 import toast from 'react-hot-toast';
 import EventCard from '../components/EventCard';
 import SkeletonCard from '../components/SkeletonCard';

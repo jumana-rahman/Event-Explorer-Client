@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { RiCalendarEventLine, RiMenuLine, RiCloseLine, RiUser3Line, RiLogoutBoxLine, RiDashboardLine } from 'react-icons/ri';
+import { RiCalendarEventLine, RiMenuLine, RiCloseLine, RiLogoutBoxLine, RiDashboardLine } from 'react-icons/ri';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -20,8 +20,8 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     setDropdownOpen(false);
     navigate('/');
   };

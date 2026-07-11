@@ -1,72 +1,108 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import type { Event, EventStatus } from '../types';
-import { MOCK_EVENTS } from '../data/mockData';
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import type { Event, EventStatus, EventCategory } from '../types';
+import { eventsAPI, adminAPI, type ApiEvent } from '../services/api';
 
 interface EventsContextType {
   events: Event[];
-  addEvent: (event: Omit<Event, 'id' | 'status' | 'createdAt'>) => void;
-  deleteEvent: (id: string) => void;
-  updateEventStatus: (id: string, status: EventStatus) => void;
+  isLoading: boolean;
+  addEvent: (data: Omit<Event, 'id' | 'status' | 'createdAt'>) => Promise<void>;
+  deleteEvent: (id: string) => Promise<void>;
+  updateEventStatus: (id: string, status: EventStatus) => Promise<void>;
   getApprovedEvents: () => Event[];
   getMyEvents: (userId: string) => Event[];
   getEventById: (id: string) => Event | undefined;
+  fetchApprovedEvents: () => Promise<void>;
+  fetchAllEvents: () => Promise<void>;
 }
 
 const EventsContext = createContext<EventsContextType | null>(null);
 
-const EVENTS_KEY = 'ee_events';
-
-function getStoredEvents(): Event[] {
-  try {
-    const raw = localStorage.getItem(EVENTS_KEY);
-    return raw ? JSON.parse(raw) : MOCK_EVENTS;
-  } catch {
-    return MOCK_EVENTS;
-  }
-}
-
-function saveEvents(events: Event[]) {
-  localStorage.setItem(EVENTS_KEY, JSON.stringify(events));
+function mapEvent(e: ApiEvent): Event {
+  return {
+    id: e._id,
+    title: e.title,
+    shortDescription: e.shortDescription,
+    description: e.description,
+    category: e.category as EventCategory,
+    eventDate: e.eventDate,
+    eventTime: e.eventTime,
+    venue: e.venue,
+    city: e.city,
+    price: e.price,
+    bannerImage: e.bannerImage,
+    galleryImages: e.galleryImages || [],
+    organizerName: e.organizerName,
+    createdBy: e.createdBy,
+    status: e.status as EventStatus,
+    createdAt: e.createdAt,
+  };
 }
 
 export function EventsProvider({ children }: { children: ReactNode }) {
   const [events, setEvents] = useState<Event[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    setEvents(getStoredEvents());
+  const fetchApprovedEvents = useCallback(async () => {
+    try {
+      const data = await eventsAPI.getApproved({ limit: '100' });
+      setEvents((data.events || []).map(mapEvent));
+    } catch (err) {
+      console.error('Failed to fetch events:', err);
+    }
   }, []);
 
-  const persist = (updated: Event[]) => {
-    setEvents(updated);
-    saveEvents(updated);
-  };
+  const fetchAllEvents = useCallback(async () => {
+    try {
+      const data = await adminAPI.getAllEvents();
+      setEvents((data.events || []).map(mapEvent));
+    } catch (err) {
+      console.error('Failed to fetch all events:', err);
+    }
+  }, []);
 
-  const addEvent = (data: Omit<Event, 'id' | 'status' | 'createdAt'>) => {
-    const newEvent: Event = {
-      ...data,
-      id: `evt-${Date.now()}`,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-    };
-    persist([...events, newEvent]);
-  };
+  useEffect(() => {
+    fetchApprovedEvents().finally(() => setIsLoading(false));
+  }, [fetchApprovedEvents]);
 
-  const deleteEvent = (id: string) => {
-    persist(events.filter((e) => e.id !== id));
-  };
+  const addEvent = useCallback(async (eventData: Omit<Event, 'id' | 'status' | 'createdAt'>) => {
+    const data = await eventsAPI.create({
+      title: eventData.title,
+      shortDescription: eventData.shortDescription,
+      description: eventData.description,
+      category: eventData.category,
+      eventDate: eventData.eventDate,
+      eventTime: eventData.eventTime,
+      venue: eventData.venue,
+      city: eventData.city,
+      price: eventData.price,
+      bannerImage: eventData.bannerImage,
+      galleryImages: eventData.galleryImages,
+    });
+    if (data?.event) {
+      setEvents((prev) => [...prev, mapEvent(data.event)]);
+    }
+  }, []);
 
-  const updateEventStatus = (id: string, status: EventStatus) => {
-    persist(events.map((e) => (e.id === id ? { ...e, status } : e)));
-  };
+  const deleteEvent = useCallback(async (id: string) => {
+    await eventsAPI.delete(id);
+    setEvents((prev) => prev.filter((e) => e.id !== id));
+  }, []);
 
-  const getApprovedEvents = () => events.filter((e) => e.status === 'approved');
+  const updateEventStatus = useCallback(async (id: string, status: EventStatus) => {
+    if (status === 'approved') {
+      await adminAPI.approveEvent(id);
+    } else if (status === 'rejected') {
+      await adminAPI.rejectEvent(id);
+    }
+    setEvents((prev) => prev.map((e) => (e.id === id ? { ...e, status } : e)));
+  }, []);
 
-  const getMyEvents = (userId: string) => events.filter((e) => e.createdBy === userId);
-
-  const getEventById = (id: string) => events.find((e) => e.id === id);
+  const getApprovedEvents = useCallback(() => events.filter((e) => e.status === 'approved'), [events]);
+  const getMyEvents = useCallback((userId: string) => events.filter((e) => e.createdBy === userId), [events]);
+  const getEventById = useCallback((id: string) => events.find((e) => e.id === id), [events]);
 
   return (
-    <EventsContext.Provider value={{ events, addEvent, deleteEvent, updateEventStatus, getApprovedEvents, getMyEvents, getEventById }}>
+    <EventsContext.Provider value={{ events, isLoading, addEvent, deleteEvent, updateEventStatus, getApprovedEvents, getMyEvents, getEventById, fetchApprovedEvents, fetchAllEvents }}>
       {children}
     </EventsContext.Provider>
   );

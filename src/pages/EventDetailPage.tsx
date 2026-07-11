@@ -1,9 +1,32 @@
+import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { RiCalendarLine, RiMapPinLine, RiUser3Line, RiTimeLine, RiArrowLeftLine, RiTicketLine, RiShareLine } from 'react-icons/ri';
 import toast from 'react-hot-toast';
-import { useEvents } from '../context/EventsContext';
+import { eventsAPI, type ApiEvent } from '../services/api';
 import EventCard from '../components/EventCard';
 import { CATEGORY_COLORS } from '../data/mockData';
+import type { Event, EventCategory } from '../types';
+
+function mapEvent(e: ApiEvent): Event {
+  return {
+    id: e._id,
+    title: e.title,
+    shortDescription: e.shortDescription,
+    description: e.description,
+    category: e.category as EventCategory,
+    eventDate: e.eventDate,
+    eventTime: e.eventTime,
+    venue: e.venue,
+    city: e.city,
+    price: e.price,
+    bannerImage: e.bannerImage,
+    galleryImages: e.galleryImages || [],
+    organizerName: e.organizerName,
+    createdBy: e.createdBy,
+    status: e.status as any,
+    createdAt: e.createdAt,
+  };
+}
 
 function formatDate(d: string) {
   try { return new Date(d).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }); } catch { return d; }
@@ -12,12 +35,33 @@ function formatDate(d: string) {
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getEventById, getApprovedEvents } = useEvents();
+  const [event, setEvent] = useState<Event | null>(null);
+  const [related, setRelated] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
-  const event = getEventById(id!);
-  const approved = getApprovedEvents();
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    eventsAPI.getById(id)
+      .then((data) => {
+        setEvent(mapEvent(data.event));
+        setRelated(data.related.map(mapEvent));
+      })
+      .catch(() => setNotFound(true))
+      .finally(() => setLoading(false));
+  }, [id]);
 
-  if (!event || event.status !== 'approved') {
+  if (loading) {
+    return (
+      <div className="page-container" style={{ paddingTop: '6rem', textAlign: 'center' }}>
+        <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '3px solid rgba(255,255,255,0.08)', borderTopColor: '#EC4899', animation: 'spin 0.8s linear infinite', margin: '0 auto 1rem' }} />
+        <p style={{ color: 'rgba(240,238,255,0.4)', fontSize: '0.875rem' }}>Loading event...</p>
+      </div>
+    );
+  }
+
+  if (notFound || !event) {
     return (
       <div className="page-container" style={{ paddingTop: '6rem', textAlign: 'center' }}>
         <h2 className="font-display" style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.75rem' }}>Event Not Found</h2>
@@ -27,7 +71,6 @@ export default function EventDetailPage() {
     );
   }
 
-  const related = approved.filter((e) => e.category === event.category && e.id !== event.id).slice(0, 4);
   const catColor = CATEGORY_COLORS[event.category] ?? CATEGORY_COLORS['Technology'];
 
   const handleShare = () => {

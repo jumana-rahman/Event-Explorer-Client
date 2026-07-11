@@ -1,34 +1,30 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import type { User, UserRole } from '../types';
-import { MOCK_USERS, ADMIN_CREDENTIALS, DEMO_CREDENTIALS } from '../data/mockData';
+import { authAPI, adminAPI, type AuthUser } from '../services/api';
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string, image?: string) => Promise<void>;
-  logout: () => void;
-  updateUserRole: (userId: string, role: UserRole) => void;
-  updateUserStatus: (userId: string, status: 'active' | 'suspended') => void;
-  getAllUsers: () => User[];
+  logout: () => Promise<void>;
+  updateUserRole: (userId: string, role: UserRole) => Promise<void>;
+  updateUserStatus: (userId: string, status: 'active' | 'suspended') => Promise<void>;
+  getAllUsers: () => Promise<User[]>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-const STORAGE_KEY = 'ee_current_user';
-const USERS_STORAGE_KEY = 'ee_users';
-
-function getStoredUsers(): User[] {
-  try {
-    const stored = localStorage.getItem(USERS_STORAGE_KEY);
-    return stored ? JSON.parse(stored) : MOCK_USERS;
-  } catch {
-    return MOCK_USERS;
-  }
-}
-
-function saveUsers(users: User[]) {
-  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+function mapUser(u: AuthUser): User {
+  return {
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    image: u.image || '',
+    role: u.role as UserRole,
+    status: u.status as 'active' | 'suspended',
+    createdAt: u.createdAt || new Date().toISOString(),
+  };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -36,114 +32,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as User;
-        const users = getStoredUsers();
-        const fresh = users.find((u) => u.id === parsed.id);
-        if (fresh && fresh.status === 'active') {
-          setUser(fresh);
-        } else {
-          localStorage.removeItem(STORAGE_KEY);
-        }
-      }
-    } catch {
-      localStorage.removeItem(STORAGE_KEY);
-    } finally {
-      setIsLoading(false);
-    }
+    authAPI.getSession()
+      .then((data) => {
+        if (data?.user) setUser(mapUser(data.user));
+      })
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
   }, []);
 
-  const login = async (email: string, password: string) => {
-    await new Promise((r) => setTimeout(r, 600));
-    const users = getStoredUsers();
-    const found = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
+  const login = useCallback(async (email: string, password: string) => {
+    const data = await authAPI.signIn({ email, password });
+    if (data?.user) setUser(mapUser(data.user));
+  }, []);
 
-    if (!found) throw new Error('No account found with that email address.');
-    if (found.status === 'suspended') throw new Error('Your account has been suspended. Please contact support.');
+  const register = useCallback(async (name: string, email: string, password: string, image = '') => {
+    const data = await authAPI.signUp({ name, email, password, image });
+    if (data?.user) setUser(mapUser(data.user));
+  }, []);
 
-    const validPasswords: Record<string, string> = {
-      [ADMIN_CREDENTIALS.email]: ADMIN_CREDENTIALS.password,
-      [DEMO_CREDENTIALS.email]: DEMO_CREDENTIALS.password,
-    };
-
-    const expectedPassword = validPasswords[found.email.toLowerCase()] ?? found.id;
-
-    const knownDemoPasswords: Record<string, string> = {};
+  const logout = useCallback(async () => {
     try {
-      const raw = localStorage.getItem('ee_passwords');
-      if (raw) Object.assign(knownDemoPasswords, JSON.parse(raw));
+      await authAPI.signOut();
     } catch {}
-
-    const storedPassword = knownDemoPasswords[found.email.toLowerCase()];
-    const actualPassword = storedPassword ?? expectedPassword;
-
-    if (password !== actualPassword && password !== 'demo123' && password !== 'admin123') {
-      if (password !== actualPassword) throw new Error('Incorrect password. Please try again.');
-    }
-
-    if (password !== actualPassword && !(found.email === ADMIN_CREDENTIALS.email && password === ADMIN_CREDENTIALS.password) && !(found.email === DEMO_CREDENTIALS.email && password === DEMO_CREDENTIALS.password)) {
-      throw new Error('Incorrect password. Please try again.');
-    }
-
-    setUser(found);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(found));
-  };
-
-  const register = async (name: string, email: string, password: string, image = '') => {
-    await new Promise((r) => setTimeout(r, 600));
-    const users = getStoredUsers();
-    const exists = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
-    if (exists) throw new Error('An account with this email already exists.');
-
-    const newUser: User = {
-      id: `user-${Date.now()}`,
-      name,
-      email,
-      image: image || `https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&auto=format`,
-      role: 'user',
-      status: 'active',
-      createdAt: new Date().toISOString(),
-    };
-
-    const updated = [...users, newUser];
-    saveUsers(updated);
-
-    try {
-      const raw = localStorage.getItem('ee_passwords') ?? '{}';
-      const passwords = JSON.parse(raw);
-      passwords[email.toLowerCase()] = password;
-      localStorage.setItem('ee_passwords', JSON.stringify(passwords));
-    } catch {}
-
-    setUser(newUser);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newUser));
-  };
-
-  const logout = () => {
     setUser(null);
-    localStorage.removeItem(STORAGE_KEY);
-  };
+  }, []);
 
-  const updateUserRole = (userId: string, role: UserRole) => {
-    const users = getStoredUsers();
-    const updated = users.map((u) => (u.id === userId ? { ...u, role } : u));
-    saveUsers(updated);
-    if (user?.id === userId) {
-      const updatedUser = { ...user, role };
-      setUser(updatedUser);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedUser));
-    }
-  };
+  const updateUserRole = useCallback(async (userId: string, role: UserRole) => {
+    await adminAPI.updateRole(userId, role);
+  }, []);
 
-  const updateUserStatus = (userId: string, status: 'active' | 'suspended') => {
-    const users = getStoredUsers();
-    const updated = users.map((u) => (u.id === userId ? { ...u, status } : u));
-    saveUsers(updated);
-  };
+  const updateUserStatus = useCallback(async (userId: string, status: 'active' | 'suspended') => {
+    await adminAPI.updateStatus(userId, status);
+  }, []);
 
-  const getAllUsers = () => getStoredUsers();
+  const getAllUsers = useCallback(async (): Promise<User[]> => {
+    const data = await adminAPI.getUsers();
+    return (data.users || []).map(mapUser);
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, isLoading, login, register, logout, updateUserRole, updateUserStatus, getAllUsers }}>

@@ -49,13 +49,6 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-function AdminRoute({ children }: { children: ReactNode }) {
-  const { user, isLoading } = useAuth();
-  if (isLoading) return null;
-  if (!user || user.role !== 'admin') return <Navigate to="/dashboard" replace />;
-  return <>{children}</>;
-}
-
 function Layout({ children }: { children: ReactNode }) {
   return (
     <>

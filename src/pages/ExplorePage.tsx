@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { RiSearchLine, RiFilterLine, RiArrowLeftLine, RiArrowRightLine, RiInboxLine } from 'react-icons/ri';
+import { RiSearchLine, RiArrowLeftLine, RiArrowRightLine, RiInboxLine } from 'react-icons/ri';
 import EventCard from '../components/EventCard';
 import SkeletonCard from '../components/SkeletonCard';
 import { useEvents } from '../context/EventsContext';
@@ -18,7 +18,7 @@ const SORT_OPTIONS = [
 const PER_PAGE = 8;
 
 export default function ExplorePage() {
-  const [params, setParams] = useSearchParams();
+  const [params] = useSearchParams();
   const { getApprovedEvents } = useEvents();
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');

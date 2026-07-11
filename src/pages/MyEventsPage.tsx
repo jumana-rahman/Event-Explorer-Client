@@ -1,19 +1,54 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
-import { RiAddLine, RiDeleteBinLine, RiEyeLine, RiCalendarLine, RiInboxLine } from 'react-icons/ri';
-import { useAuth } from '../context/AuthContext';
-import { useEvents } from '../context/EventsContext';
+import { RiAddLine, RiDeleteBinLine, RiEyeLine, RiCalendarLine } from 'react-icons/ri';
+import { eventsAPI, type ApiEvent } from '../services/api';
+import type { Event, EventCategory } from '../types';
+
+function mapEvent(e: ApiEvent): Event {
+  return {
+    id: e._id,
+    title: e.title,
+    shortDescription: e.shortDescription,
+    description: e.description,
+    category: e.category as EventCategory,
+    eventDate: e.eventDate,
+    eventTime: e.eventTime,
+    venue: e.venue,
+    city: e.city,
+    price: e.price,
+    bannerImage: e.bannerImage,
+    galleryImages: e.galleryImages || [],
+    organizerName: e.organizerName,
+    createdBy: e.createdBy,
+    status: e.status as any,
+    createdAt: e.createdAt,
+  };
+}
 
 function formatDate(d: string) {
   try { return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); } catch { return d; }
 }
 
 export default function MyEventsPage() {
-  const { user } = useAuth();
-  const { getMyEvents, deleteEvent } = useEvents();
+  const [myEvents, setMyEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const myEvents = getMyEvents(user!.id);
+  const fetchEvents = async () => {
+    try {
+      const data = await eventsAPI.getMyEvents();
+      setMyEvents((data.events || []).map(mapEvent));
+    } catch {
+      toast.error('Failed to load your events.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
 
   const handleDelete = async (id: string, title: string) => {
     const result = await Swal.fire({
@@ -34,8 +69,13 @@ export default function MyEventsPage() {
     });
 
     if (result.isConfirmed) {
-      deleteEvent(id);
-      toast.success('Event deleted successfully.');
+      try {
+        await eventsAPI.delete(id);
+        setMyEvents((prev) => prev.filter((e) => e.id !== id));
+        toast.success('Event deleted successfully.');
+      } catch {
+        toast.error('Failed to delete event.');
+      }
     }
   };
 
@@ -43,6 +83,17 @@ export default function MyEventsPage() {
     const map: Record<string, string> = { pending: 'badge-pending', approved: 'badge-approved', rejected: 'badge-rejected' };
     return <span className={`badge ${map[status] ?? ''}`}>{status}</span>;
   };
+
+  if (loading) {
+    return (
+      <div className="page-container" style={{ paddingTop: '3rem', paddingBottom: '4rem' }}>
+        <div style={{ textAlign: 'center', padding: '4rem 0' }}>
+          <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '3px solid rgba(255,255,255,0.08)', borderTopColor: '#EC4899', animation: 'spin 0.8s linear infinite', margin: '0 auto 1rem' }} />
+          <p style={{ color: 'rgba(240,238,255,0.4)', fontSize: '0.875rem' }}>Loading your events...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page-container" style={{ paddingTop: '3rem', paddingBottom: '4rem' }}>

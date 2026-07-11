@@ -1,9 +1,9 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { RiAddLine, RiCalendarLine, RiMapPinLine, RiTicketLine, RiImageLine, RiInformationLine } from 'react-icons/ri';
-import { useAuth } from '../context/AuthContext';
-import { useEvents } from '../context/EventsContext';
+import { eventsAPI } from '../services/api';
 import { EVENT_CATEGORIES } from '../types';
 import type { EventCategory } from '../types';
 
@@ -21,25 +21,28 @@ interface FormValues {
 }
 
 export default function AddEventPage() {
-  const { user } = useAuth();
-  const { addEvent } = useEvents();
   const navigate = useNavigate();
+  const [submitting, setSubmitting] = useState(false);
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormValues>({
+  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
     defaultValues: { price: 0, category: 'Technology' },
   });
 
   const onSubmit = async (data: FormValues) => {
-    await new Promise((r) => setTimeout(r, 500));
-    addEvent({
-      ...data,
-      price: Number(data.price),
-      galleryImages: [],
-      organizerName: user!.name,
-      createdBy: user!.id,
-    });
-    toast.success('Event submitted! It\'s under review and will go live once approved.', { duration: 4000 });
-    navigate('/my-events');
+    setSubmitting(true);
+    try {
+      await eventsAPI.create({
+        ...data,
+        price: Number(data.price),
+        galleryImages: [],
+      });
+      toast.success('Event submitted! It\'s under review and will go live once approved.', { duration: 4000 });
+      navigate('/my-events');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to create event.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const today = new Date().toISOString().split('T')[0];
@@ -204,11 +207,11 @@ export default function AddEventPage() {
           </button>
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={submitting}
             className="btn-primary"
-            style={{ flex: 2, justifyContent: 'center', padding: '0.75rem', opacity: isSubmitting ? 0.7 : 1 }}
+            style={{ flex: 2, justifyContent: 'center', padding: '0.75rem', opacity: submitting ? 0.7 : 1 }}
           >
-            {isSubmitting ? 'Submitting…' : <><RiAddLine /> Submit for Review</>}
+            {submitting ? 'Submitting…' : <><RiAddLine /> Submit for Review</>}
           </button>
         </div>
       </form>

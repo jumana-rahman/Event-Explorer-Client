@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Swal from 'sweetalert2';
@@ -10,15 +10,17 @@ import {
 } from 'react-icons/ri';
 import { useAuth } from '../context/AuthContext';
 import { useEvents } from '../context/EventsContext';
-import { MOCK_STATS } from '../data/mockData';
+import { adminAPI, type AdminStatsResponse } from '../services/api';
+import type { User } from '../types';
 
 const PIE_COLORS = ['#FBBF24', '#10B981', '#F87171'];
 
 export default function DashboardPage() {
   const { user, updateUserRole, updateUserStatus, getAllUsers } = useAuth();
-  const { getMyEvents, events, updateEventStatus, deleteEvent } = useEvents();
+  const { getMyEvents, events, fetchAllEvents, updateEventStatus, deleteEvent } = useEvents();
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'events'>('overview');
-  const [users, setUsers] = useState(() => getAllUsers());
+  const [users, setUsers] = useState<User[]>([]);
+  const [stats, setStats] = useState<AdminStatsResponse | null>(null);
 
   const isAdmin = user?.role === 'admin';
 
@@ -41,7 +43,29 @@ export default function DashboardPage() {
     { name: 'Rejected', value: rejectedEvents.length },
   ];
 
-  const refreshUsers = () => setUsers(getAllUsers());
+  const refreshUsers = useCallback(async () => {
+    try {
+      const allUsers = await getAllUsers();
+      setUsers(allUsers);
+    } catch {
+      toast.error('Failed to load users.');
+    }
+  }, [getAllUsers]);
+
+  const refreshStats = useCallback(async () => {
+    try {
+      const s = await adminAPI.getStats();
+      setStats(s);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    if (isAdmin) {
+      refreshUsers();
+      refreshStats();
+      fetchAllEvents();
+    }
+  }, [isAdmin, refreshUsers, refreshStats, fetchAllEvents]);
 
   const handleRoleChange = async (userId: string, name: string, currentRole: string) => {
     const newRole = currentRole === 'admin' ? 'user' : 'admin';
@@ -54,9 +78,13 @@ export default function DashboardPage() {
       background: '#111118', color: '#f0eeff', confirmButtonColor: '#EC4899', cancelButtonColor: 'rgba(255,255,255,0.08)',
     });
     if (result.isConfirmed) {
-      updateUserRole(userId, newRole as 'user' | 'admin');
-      refreshUsers();
-      toast.success(`${name} is now a ${newRole}.`);
+      try {
+        await updateUserRole(userId, newRole as 'user' | 'admin');
+        refreshUsers();
+        toast.success(`${name} is now a ${newRole}.`);
+      } catch {
+        toast.error('Failed to update role.');
+      }
     }
   };
 
@@ -71,25 +99,29 @@ export default function DashboardPage() {
       background: '#111118', color: '#f0eeff', confirmButtonColor: newStatus === 'suspended' ? '#F43F5E' : '#10B981', cancelButtonColor: 'rgba(255,255,255,0.08)',
     });
     if (result.isConfirmed) {
-      updateUserStatus(userId, newStatus as 'active' | 'suspended');
-      refreshUsers();
-      toast.success(`${name}'s account has been ${newStatus}.`);
+      try {
+        await updateUserStatus(userId, newStatus as 'active' | 'suspended');
+        refreshUsers();
+        toast.success(`${name}'s account has been ${newStatus}.`);
+      } catch {
+        toast.error('Failed to update status.');
+      }
     }
   };
 
   const handleApprove = async (id: string, title: string) => {
     const r = await Swal.fire({ title: 'Approve Event?', text: `"${title}" will become publicly visible.`, icon: 'question', showCancelButton: true, confirmButtonText: 'Approve', background: '#111118', color: '#f0eeff', confirmButtonColor: '#10B981', cancelButtonColor: 'rgba(255,255,255,0.08)' });
-    if (r.isConfirmed) { updateEventStatus(id, 'approved'); toast.success('Event approved and published!'); }
+    if (r.isConfirmed) { await updateEventStatus(id, 'approved'); toast.success('Event approved and published!'); }
   };
 
   const handleReject = async (id: string, title: string) => {
     const r = await Swal.fire({ title: 'Reject Event?', text: `"${title}" will be hidden from public.`, icon: 'warning', showCancelButton: true, confirmButtonText: 'Reject', background: '#111118', color: '#f0eeff', confirmButtonColor: '#F43F5E', cancelButtonColor: 'rgba(255,255,255,0.08)' });
-    if (r.isConfirmed) { updateEventStatus(id, 'rejected'); toast.success('Event rejected.'); }
+    if (r.isConfirmed) { await updateEventStatus(id, 'rejected'); toast.success('Event rejected.'); }
   };
 
   const handleDeleteEvent = async (id: string, title: string) => {
     const r = await Swal.fire({ title: 'Delete Event?', text: `Permanently delete "${title}"?`, icon: 'warning', showCancelButton: true, confirmButtonText: 'Delete', background: '#111118', color: '#f0eeff', confirmButtonColor: '#F43F5E', cancelButtonColor: 'rgba(255,255,255,0.08)' });
-    if (r.isConfirmed) { deleteEvent(id); toast.success('Event deleted.'); }
+    if (r.isConfirmed) { await deleteEvent(id); toast.success('Event deleted.'); }
   };
 
   const statusBadge = (status: string) => {
@@ -139,10 +171,10 @@ export default function DashboardPage() {
           {/* Stats */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
             {(isAdmin ? [
-              { label: 'Total Users', value: MOCK_STATS.totalUsers, icon: <RiGroupLine />, color: '#EC4899' },
-              { label: 'Total Events', value: allEvents.length, icon: <RiCalendarLine />, color: '#8B5CF6' },
-              { label: 'Pending Events', value: pendingEvents.length, icon: <RiTimeLine />, color: '#FBBF24' },
-              { label: 'Approved Events', value: approvedEvents.length, icon: <RiCheckLine />, color: '#10B981' },
+              { label: 'Total Users', value: stats?.totalUsers ?? users.length, icon: <RiGroupLine />, color: '#EC4899' },
+              { label: 'Total Events', value: stats?.totalEvents ?? allEvents.length, icon: <RiCalendarLine />, color: '#8B5CF6' },
+              { label: 'Pending Events', value: stats?.pendingEvents ?? pendingEvents.length, icon: <RiTimeLine />, color: '#FBBF24' },
+              { label: 'Approved Events', value: stats?.approvedEvents ?? approvedEvents.length, icon: <RiCheckLine />, color: '#10B981' },
             ] : [
               { label: 'Total Events', value: myEvents.length, icon: <RiCalendarLine />, color: '#EC4899' },
               { label: 'Approved', value: myApproved, icon: <RiCheckLine />, color: '#10B981' },
@@ -185,7 +217,7 @@ export default function DashboardPage() {
               <div className="glass-card" style={{ borderRadius: '1rem', padding: '1.5rem' }}>
                 <h3 style={{ fontSize: '0.8rem', fontFamily: 'DM Mono', color: 'rgba(240,238,255,0.5)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '1.25rem' }}>Events by Category</h3>
                 <ResponsiveContainer width="100%" height={180}>
-                  <BarChart data={MOCK_STATS.eventsByCategory.slice(0, 5)} margin={{ left: -25 }}>
+                  <BarChart data={(stats?.eventsByCategory || []).slice(0, 5)} margin={{ left: -25 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
                     <XAxis dataKey="category" tick={{ fill: 'rgba(240,238,255,0.35)', fontSize: 9 }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fill: 'rgba(240,238,255,0.35)', fontSize: 9 }} axisLine={false} tickLine={false} />
