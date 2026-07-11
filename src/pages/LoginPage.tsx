@@ -4,7 +4,6 @@ import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { RiMailLine, RiLockLine, RiEyeLine, RiEyeOffLine, RiCalendarEventLine, RiFlashlightLine } from 'react-icons/ri';
 import { useAuth } from '../context/AuthContext';
-import { DEMO_CREDENTIALS } from '../data/mockData';
 
 interface FormValues {
   email: string;
@@ -35,8 +34,8 @@ export default function LoginPage() {
   };
 
   const fillDemo = () => {
-    setValue('email', DEMO_CREDENTIALS.email);
-    setValue('password', DEMO_CREDENTIALS.password);
+    setValue('email', 'demo@eventexplorer.com');
+    setValue('password', 'demo1234');
     toast('Demo credentials filled in — hit Login!', { icon: '🚀' });
   };
 

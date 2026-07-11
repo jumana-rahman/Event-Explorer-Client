@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import EventCard from '../components/EventCard';
 import SkeletonCard from '../components/SkeletonCard';
 import { useEvents } from '../context/EventsContext';
-import { MOCK_STATS, TESTIMONIALS, FAQ_ITEMS, CATEGORY_ICONS, CATEGORY_COLORS } from '../data/mockData';
+import { TESTIMONIALS, FAQ_ITEMS, CATEGORY_ICONS, CATEGORY_COLORS } from '../data/mockData';
 import type { EventCategory } from '../types';
 
 const EVENT_CATEGORIES: EventCategory[] = ['Technology', 'Business', 'Workshop', 'Conference', 'Education', 'Music', 'Gaming', 'Sports'];
@@ -97,6 +97,26 @@ export default function HomePage() {
     .filter((e) => new Date(e.eventDate) >= new Date())
     .sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime())
     .slice(0, 6);
+
+  const computedStats = useMemo(() => {
+    const byCategory = EVENT_CATEGORIES.map((cat) => ({
+      category: cat,
+      count: approvedEvents.filter((e) => e.category === cat).length,
+    })).filter((c) => c.count > 0);
+
+    const byMonth: Record<string, number> = {};
+    approvedEvents.forEach((e) => {
+      const d = new Date(e.eventDate);
+      const key = d.toLocaleDateString('en-US', { month: 'short' });
+      byMonth[key] = (byMonth[key] || 0) + 1;
+    });
+    const eventsByMonth = Object.entries(byMonth).map(([month, count]) => ({ month, count }));
+
+    const freeCount = approvedEvents.filter((e) => e.price === 0).length;
+    const paidCount = approvedEvents.filter((e) => e.price > 0).length;
+
+    return { eventsByCategory: byCategory, eventsByMonth, freeVsPaid: [{ name: 'Free', value: freeCount }, { name: 'Paid', value: paidCount }] };
+  }, [approvedEvents]);
 
   useEffect(() => {
     const t = setTimeout(() => setLoading(false), 1200);
@@ -193,9 +213,9 @@ export default function HomePage() {
               }}
             >
               {[
-                { icon: <RiCalendarLine />, value: '312+', label: 'Events Listed' },
-                { icon: <RiGroupLine />, value: '847+', label: 'Registered Users' },
-                { icon: <RiMapPinLine />, value: '40+', label: 'Cities Covered' },
+                { icon: <RiCalendarLine />, value: approvedEvents.length.toString(), label: 'Events Listed' },
+                { icon: <RiMapPinLine />, value: new Set(approvedEvents.map((e) => e.city)).size.toString(), label: 'Cities Covered' },
+                { icon: <RiGroupLine />, value: new Set(approvedEvents.map((e) => e.createdBy)).size.toString(), label: 'Organizers' },
               ].map((stat) => (
                 <div key={stat.label} style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: '1.6rem', fontWeight: 800, fontFamily: 'Bricolage Grotesque, sans-serif', color: '#f0eeff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}>
@@ -320,10 +340,10 @@ export default function HomePage() {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '3rem' }}>
             {[
-              { value: '847+', label: 'Registered Users', color: '#EC4899' },
-              { value: '312+', label: 'Events Listed', color: '#8B5CF6' },
-              { value: '267+', label: 'Approved Events', color: '#10B981' },
-              { value: '40+', label: 'Cities', color: '#F59E0B' },
+              { value: approvedEvents.length.toString(), label: 'Events Listed', color: '#8B5CF6' },
+              { value: computedStats.freeVsPaid[1].value.toString(), label: 'Paid Events', color: '#10B981' },
+              { value: computedStats.freeVsPaid[0].value.toString(), label: 'Free Events', color: '#F59E0B' },
+              { value: new Set(approvedEvents.map((e) => e.city)).size.toString(), label: 'Cities', color: '#EC4899' },
             ].map((s) => (
               <div key={s.label} className="stat-card" style={{ textAlign: 'center' }}>
                 <div className="font-display" style={{ fontSize: '2.2rem', fontWeight: 800, color: s.color, marginBottom: '0.25rem' }}>{s.value}</div>
@@ -337,13 +357,13 @@ export default function HomePage() {
             <div className="glass-card" style={{ borderRadius: '1rem', padding: '1.5rem' }}>
               <h3 className="font-display" style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '1.25rem', color: 'rgba(240,238,255,0.7)' }}>Events by Category</h3>
               <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={MOCK_STATS.eventsByCategory} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                <BarChart data={computedStats.eventsByCategory} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
                   <XAxis dataKey="category" tick={{ fill: 'rgba(240,238,255,0.35)', fontSize: 10 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: 'rgba(240,238,255,0.35)', fontSize: 10 }} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={{ background: '#111118', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', color: '#f0eeff' }} />
                   <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                    {MOCK_STATS.eventsByCategory.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                    {computedStats.eventsByCategory.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -353,7 +373,7 @@ export default function HomePage() {
             <div className="glass-card" style={{ borderRadius: '1rem', padding: '1.5rem' }}>
               <h3 className="font-display" style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '1.25rem', color: 'rgba(240,238,255,0.7)' }}>Events per Month</h3>
               <ResponsiveContainer width="100%" height={220}>
-                <LineChart data={MOCK_STATS.eventsByMonth} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                <LineChart data={computedStats.eventsByMonth} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
                   <XAxis dataKey="month" tick={{ fill: 'rgba(240,238,255,0.35)', fontSize: 10 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: 'rgba(240,238,255,0.35)', fontSize: 10 }} axisLine={false} tickLine={false} />
@@ -368,14 +388,14 @@ export default function HomePage() {
               <h3 className="font-display" style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '1.25rem', color: 'rgba(240,238,255,0.7)' }}>Free vs Paid Events</h3>
               <ResponsiveContainer width="100%" height={220}>
                 <PieChart>
-                  <Pie data={MOCK_STATS.freeVsPaid} cx="50%" cy="50%" innerRadius={55} outerRadius={85} dataKey="value" paddingAngle={3}>
-                    {MOCK_STATS.freeVsPaid.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                  <Pie data={computedStats.freeVsPaid} cx="50%" cy="50%" innerRadius={55} outerRadius={85} dataKey="value" paddingAngle={3}>
+                    {computedStats.freeVsPaid.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                   </Pie>
                   <Tooltip contentStyle={{ background: '#111118', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', color: '#f0eeff' }} />
                 </PieChart>
               </ResponsiveContainer>
               <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem' }}>
-                {MOCK_STATS.freeVsPaid.map((item, i) => (
+                {computedStats.freeVsPaid.map((item, i) => (
                   <div key={item.name} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem' }}>
                     <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: PIE_COLORS[i] }} />
                     <span style={{ color: 'rgba(240,238,255,0.6)' }}>{item.name} ({item.value})</span>
