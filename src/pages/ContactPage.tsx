@@ -129,13 +129,15 @@ export default function ContactPage() {
               <h3 className="font-display" style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '1rem', color: 'rgba(240,238,255,0.5)', fontFamily: 'DM Mono, monospace', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Social Media</h3>
               <div style={{ display: 'flex', gap: '0.625rem' }}>
                 {[
-                  { icon: <RiTwitterXLine />, label: 'Twitter' },
-                  { icon: <RiInstagramLine />, label: 'Instagram' },
-                  { icon: <RiLinkedinBoxLine />, label: 'LinkedIn' },
+                  { icon: <RiTwitterXLine />, label: 'Twitter', href: 'https://twitter.com/eventexplorer' },
+                  { icon: <RiInstagramLine />, label: 'Instagram', href: 'https://instagram.com/eventexplorer' },
+                  { icon: <RiLinkedinBoxLine />, label: 'LinkedIn', href: 'https://linkedin.com/company/eventexplorer' },
                 ].map((s) => (
                   <a
                     key={s.label}
-                    href="#"
+                    href={s.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     title={s.label}
                     style={{
                       flex: 1, height: '44px',

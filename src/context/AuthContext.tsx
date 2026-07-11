@@ -42,7 +42,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     const data = await authAPI.signIn({ email, password });
-    if (data?.user) setUser(mapUser(data.user));
+    if (data?.user) {
+      // Check if user is suspended
+      const statusRes = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/check-status`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const statusData = await statusRes.json();
+      if (statusData.suspended) {
+        await authAPI.signOut();
+        throw new Error(statusData.message || 'Your account has been suspended.');
+      }
+      setUser(mapUser(data.user));
+    }
   }, []);
 
   const register = useCallback(async (name: string, email: string, password: string, image = '') => {

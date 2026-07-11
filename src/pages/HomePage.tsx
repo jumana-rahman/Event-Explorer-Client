@@ -123,11 +123,22 @@ export default function HomePage() {
     return () => clearTimeout(t);
   }, []);
 
-  const handleNewsletter = (e: React.FormEvent) => {
+  const handleNewsletter = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
-    toast.success("You're subscribed! Welcome to the community.", { icon: '🎉' });
-    setEmail('');
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/subscribe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Subscription failed');
+      toast.success(data.message || "You're subscribed! Welcome to the community.", { icon: '🎉' });
+      setEmail('');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Subscription failed');
+    }
   };
 
   return (

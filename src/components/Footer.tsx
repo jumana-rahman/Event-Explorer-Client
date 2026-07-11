@@ -21,14 +21,16 @@ export default function Footer() {
             </p>
             <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem' }}>
               {[
-                { icon: <RiTwitterXLine />, href: '#' },
-                { icon: <RiInstagramLine />, href: '#' },
-                { icon: <RiLinkedinBoxLine />, href: '#' },
-                { icon: <RiGithubLine />, href: '#' },
+                { icon: <RiTwitterXLine />, href: 'https://twitter.com/eventexplorer' },
+                { icon: <RiInstagramLine />, href: 'https://instagram.com/eventexplorer' },
+                { icon: <RiLinkedinBoxLine />, href: 'https://linkedin.com/company/eventexplorer' },
+                { icon: <RiGithubLine />, href: 'https://github.com/eventexplorer' },
               ].map((s, i) => (
                 <a
                   key={i}
                   href={s.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   style={{
                     width: '34px', height: '34px',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
