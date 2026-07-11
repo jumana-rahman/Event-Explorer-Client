@@ -26,6 +26,25 @@ async function request<T>(endpoint: string, options: FetchOptions = {}): Promise
   return data as T;
 }
 
+// ─── Image Upload (imgbb) ────────────────────────────────────────
+
+export async function uploadImageToImgbb(file: File): Promise<string> {
+  const apiKey = import.meta.env.VITE_IMGBB_API_KEY;
+  if (!apiKey) throw new Error('imgbb API key is not configured. Set VITE_IMGBB_API_KEY in your .env file.');
+
+  const formData = new FormData();
+  formData.append('image', file);
+
+  const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Image upload failed.');
+  return data.data.url as string;
+}
+
 // ─── Auth API ────────────────────────────────────────────────────
 
 export interface AuthUser {

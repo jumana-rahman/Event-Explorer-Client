@@ -1,16 +1,16 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { RiMailLine, RiLockLine, RiUser3Line, RiImageLine, RiEyeLine, RiEyeOffLine, RiCalendarEventLine } from 'react-icons/ri';
 import { useAuth } from '../context/AuthContext';
+import { uploadImageToImgbb } from '../services/api';
 
 interface FormValues {
   name: string;
   email: string;
   password: string;
   confirmPassword: string;
-  image: string;
 }
 
 export default function RegisterPage() {
@@ -18,20 +18,52 @@ export default function RegisterPage() {
   const navigate = useNavigate();
   const [showPass, setShowPass] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [uploadingImg, setUploadingImg] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<FormValues>();
   const password = watch('password', '');
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be under 5 MB.');
+      return;
+    }
+    setImageFile(file);
+    setPreview(URL.createObjectURL(file));
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setPreview(null);
+    if (fileRef.current) fileRef.current.value = '';
+  };
+
   const onSubmit = async (data: FormValues) => {
     setSubmitting(true);
     try {
-      await registerUser(data.name, data.email, data.password, data.image);
-      toast.success('Account created! Welcome to Event Explorer 🎉');
+      let imageUrl = '';
+      if (imageFile) {
+        setUploadingImg(true);
+        imageUrl = await uploadImageToImgbb(imageFile);
+        setUploadingImg(false);
+      }
+      await registerUser(data.name, data.email, data.password, imageUrl);
+      toast.success('Account created! Welcome to Event Explorer');
       navigate('/dashboard');
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Registration failed.');
     } finally {
       setSubmitting(false);
+      setUploadingImg(false);
     }
   };
 
@@ -124,27 +156,72 @@ export default function RegisterPage() {
               {errors.confirmPassword && <div className="error-text">{errors.confirmPassword.message}</div>}
             </div>
 
+            {/* Profile Photo Upload */}
             <div>
-              <label className="label-text">Profile Photo URL <span style={{ color: 'rgba(240,238,255,0.25)' }}>(optional)</span></label>
-              <div style={{ position: 'relative' }}>
-                <RiImageLine style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(240,238,255,0.3)', pointerEvents: 'none' }} />
-                <input
-                  type="url"
-                  placeholder="https://..."
-                  className="input-field"
-                  style={{ paddingLeft: '2.25rem' }}
-                  {...register('image')}
-                />
-              </div>
+              <label className="label-text">Profile Photo <span style={{ color: 'rgba(240,238,255,0.25)' }}>(optional)</span></label>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                style={{ display: 'none' }}
+              />
+
+              {preview ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '0.75rem', padding: '0.75rem' }}>
+                  <img
+                    src={preview}
+                    alt="Preview"
+                    style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(236,72,153,0.3)' }}
+                  />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{imageFile?.name}</div>
+                    <div style={{ fontSize: '0.72rem', color: 'rgba(240,238,255,0.35)' }}>{imageFile ? `${(imageFile.size / 1024).toFixed(0)} KB` : ''}</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={removeImage}
+                    style={{ background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.2)', color: '#FDA4AF', borderRadius: '0.375rem', padding: '0.3rem 0.6rem', cursor: 'pointer', fontSize: '0.72rem', fontFamily: 'inherit' }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px dashed rgba(255,255,255,0.12)',
+                    borderRadius: '0.75rem',
+                    padding: '1.25rem',
+                    cursor: 'pointer',
+                    color: 'rgba(240,238,255,0.4)',
+                    fontSize: '0.85rem',
+                    fontFamily: 'inherit',
+                    transition: 'border-color 0.2s',
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.borderColor = 'rgba(236,72,153,0.3)'}
+                  onMouseOut={(e) => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'}
+                >
+                  <RiImageLine style={{ fontSize: '1.25rem' }} />
+                  Choose a photo
+                </button>
+              )}
             </div>
 
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || uploadingImg}
               className="btn-primary"
-              style={{ justifyContent: 'center', padding: '0.75rem', marginTop: '0.5rem', opacity: submitting ? 0.7 : 1 }}
+              style={{ justifyContent: 'center', padding: '0.75rem', marginTop: '0.5rem', opacity: submitting || uploadingImg ? 0.7 : 1 }}
             >
-              {submitting ? 'Creating account…' : 'Create Account'}
+              {uploadingImg ? 'Uploading image…' : submitting ? 'Creating account…' : 'Create Account'}
             </button>
           </form>
 

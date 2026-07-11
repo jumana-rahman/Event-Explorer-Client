@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { RiAddLine, RiCalendarLine, RiMapPinLine, RiTicketLine, RiImageLine, RiInformationLine } from 'react-icons/ri';
-import { eventsAPI } from '../services/api';
+import { eventsAPI, uploadImageToImgbb } from '../services/api';
 import { EVENT_CATEGORIES } from '../types';
 import type { EventCategory } from '../types';
 
@@ -17,23 +17,56 @@ interface FormValues {
   venue: string;
   city: string;
   price: number;
-  bannerImage: string;
 }
 
 export default function AddEventPage() {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
+  const [uploadingImg, setUploadingImg] = useState(false);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
     defaultValues: { price: 0, category: 'Technology' },
   });
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file.');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Image must be under 10 MB.');
+      return;
+    }
+    setBannerFile(file);
+    setBannerPreview(URL.createObjectURL(file));
+  };
+
+  const removeBanner = () => {
+    setBannerFile(null);
+    setBannerPreview(null);
+    if (fileRef.current) fileRef.current.value = '';
+  };
+
   const onSubmit = async (data: FormValues) => {
+    if (!bannerFile) {
+      toast.error('Please upload a banner image.');
+      return;
+    }
     setSubmitting(true);
     try {
+      setUploadingImg(true);
+      const bannerImage = await uploadImageToImgbb(bannerFile);
+      setUploadingImg(false);
+
       await eventsAPI.create({
         ...data,
         price: Number(data.price),
+        bannerImage,
         galleryImages: [],
       });
       toast.success('Event submitted! It\'s under review and will go live once approved.', { duration: 4000 });
@@ -42,6 +75,7 @@ export default function AddEventPage() {
       toast.error(err instanceof Error ? err.message : 'Failed to create event.');
     } finally {
       setSubmitting(false);
+      setUploadingImg(false);
     }
   };
 
@@ -190,14 +224,67 @@ export default function AddEventPage() {
           </div>
 
           <div>
-            <label className="label-text"><RiImageLine style={{ display: 'inline', marginRight: '0.3rem' }} />Banner Image URL *</label>
+            <label className="label-text"><RiImageLine style={{ display: 'inline', marginRight: '0.3rem' }} />Banner Image *</label>
             <input
-              type="url"
-              placeholder="https://images.unsplash.com/..."
-              className="input-field"
-              {...register('bannerImage', { required: 'Banner image URL is required', pattern: { value: /^https?:\/\/.+/, message: 'Enter a valid URL starting with http/https' } })}
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              style={{ display: 'none' }}
             />
-            {errors.bannerImage && <div className="error-text">{errors.bannerImage.message}</div>}
+
+            {bannerPreview ? (
+              <div style={{ position: 'relative', borderRadius: '0.75rem', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <img
+                  src={bannerPreview}
+                  alt="Banner preview"
+                  style={{ width: '100%', height: '180px', objectFit: 'cover', display: 'block' }}
+                />
+                <button
+                  type="button"
+                  onClick={removeBanner}
+                  style={{
+                    position: 'absolute', top: '0.5rem', right: '0.5rem',
+                    background: 'rgba(0,0,0,0.7)', border: '1px solid rgba(255,255,255,0.15)',
+                    color: '#FDA4AF', borderRadius: '0.375rem', padding: '0.3rem 0.7rem',
+                    cursor: 'pointer', fontSize: '0.72rem', fontFamily: 'inherit', backdropFilter: 'blur(8px)',
+                  }}
+                >
+                  Remove
+                </button>
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0.5rem 0.75rem', background: 'linear-gradient(transparent, rgba(0,0,0,0.7))', fontSize: '0.72rem', color: 'rgba(255,255,255,0.7)' }}>
+                  {bannerFile?.name} ({bannerFile ? `${(bannerFile.size / 1024).toFixed(0)} KB` : ''})
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '2px dashed rgba(255,255,255,0.1)',
+                  borderRadius: '0.75rem',
+                  padding: '2.5rem',
+                  cursor: 'pointer',
+                  color: 'rgba(240,238,255,0.35)',
+                  fontSize: '0.85rem',
+                  fontFamily: 'inherit',
+                  transition: 'border-color 0.2s',
+                }}
+                onMouseOver={(e) => e.currentTarget.style.borderColor = 'rgba(236,72,153,0.3)'}
+                onMouseOut={(e) => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'}
+              >
+                <RiImageLine style={{ fontSize: '2rem' }} />
+                <span>Click to upload banner image</span>
+                <span style={{ fontSize: '0.72rem', color: 'rgba(240,238,255,0.2)' }}>JPG, PNG, WebP — max 10 MB</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -207,11 +294,11 @@ export default function AddEventPage() {
           </button>
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || uploadingImg}
             className="btn-primary"
-            style={{ flex: 2, justifyContent: 'center', padding: '0.75rem', opacity: submitting ? 0.7 : 1 }}
+            style={{ flex: 2, justifyContent: 'center', padding: '0.75rem', opacity: submitting || uploadingImg ? 0.7 : 1 }}
           >
-            {submitting ? 'Submitting…' : <><RiAddLine /> Submit for Review</>}
+            {uploadingImg ? 'Uploading image…' : submitting ? 'Submitting…' : <><RiAddLine /> Submit for Review</>}
           </button>
         </div>
       </form>
