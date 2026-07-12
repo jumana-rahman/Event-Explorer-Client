@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
@@ -18,11 +18,24 @@ const PIE_COLORS = ['#FBBF24', '#10B981', '#F87171'];
 export default function DashboardPage() {
   const { user, updateUserRole, updateUserStatus, getAllUsers } = useAuth();
   const { getMyEvents, events, fetchAllEvents, updateEventStatus } = useEvents();
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'events'>('overview');
+  const navigate = useNavigate();
+  const location = useLocation();
   const [users, setUsers] = useState<User[]>([]);
   const [stats, setStats] = useState<AdminStatsResponse | null>(null);
 
   const isAdmin = user?.role === 'admin';
+
+  const activeTab = (() => {
+    const path = location.pathname;
+    if (path.includes('/manage-events')) return 'manage-events';
+    if (path.includes('/manage-users')) return 'manage-users';
+    return 'overview';
+  })();
+
+  const setActiveTab = (tab: string) => {
+    if (tab === 'overview') navigate('/dashboard');
+    else navigate(`/dashboard/${tab}`);
+  };
 
   // User stats
   const myEvents = getMyEvents(user!.id);
@@ -140,7 +153,7 @@ export default function DashboardPage() {
   const formatDate = (d: string) => { try { return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); } catch { return d; } };
 
   const tabs = isAdmin
-    ? [{ id: 'overview', label: 'Overview' }, { id: 'events', label: 'Manage Events' }, { id: 'users', label: 'Manage Users' }]
+    ? [{ id: 'overview', label: 'Overview' }, { id: 'manage-events', label: 'Manage Events' }, { id: 'manage-users', label: 'Manage Users' }]
     : [{ id: 'overview', label: 'Overview' }];
 
   return (
@@ -270,7 +283,7 @@ export default function DashboardPage() {
       )}
 
       {/* MANAGE EVENTS TAB (admin) */}
-      {activeTab === 'events' && isAdmin && (
+      {activeTab === 'manage-events' && isAdmin && (
         <div>
           <div style={{ marginBottom: '1.25rem' }}>
             <h2 className="font-display" style={{ fontSize: '1.25rem', fontWeight: 700 }}>All Events ({allEvents.length})</h2>
@@ -318,7 +331,7 @@ export default function DashboardPage() {
       )}
 
       {/* MANAGE USERS TAB (admin) */}
-      {activeTab === 'users' && isAdmin && (
+      {activeTab === 'manage-users' && isAdmin && (
         <div>
           <div style={{ marginBottom: '1.25rem' }}>
             <h2 className="font-display" style={{ fontSize: '1.25rem', fontWeight: 700 }}>Registered Users ({users.length})</h2>

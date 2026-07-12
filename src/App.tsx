@@ -113,6 +113,7 @@ function AppRoutes() {
       <Route path="/add-event" element={<Layout><ProtectedRoute><AddEventPage /></ProtectedRoute></Layout>} />
       <Route path="/my-events" element={<Layout><ProtectedRoute><MyEventsPage /></ProtectedRoute></Layout>} />
       <Route path="/dashboard" element={<Layout><AdminRoute><DashboardPage /></AdminRoute></Layout>} />
+      <Route path="/dashboard/*" element={<Layout><AdminRoute><DashboardPage /></AdminRoute></Layout>} />
 
       {/* Error pages */}
       <Route path="/unauthorized" element={<Layout><UnauthorizedPage /></Layout>} />
