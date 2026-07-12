@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const data = await authAPI.signIn({ email, password });
     if (data?.user) {
       // Check if user is suspended
-      const statusRes = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/check-status`, {
+      const statusRes = await fetch(`${(import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/+$/, '')}/api/auth/check-status`, {
         method: 'POST',
         credentials: 'include',
       });
