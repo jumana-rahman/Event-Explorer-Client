@@ -21,9 +21,9 @@ export default function Navbar() {
   }, []);
 
   const handleLogout = async () => {
+    navigate('/', { replace: true });
     await logout();
     setDropdownOpen(false);
-    navigate('/', { replace: true });
   };
 
   const guestLinks = [
