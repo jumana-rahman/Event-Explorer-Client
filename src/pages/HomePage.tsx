@@ -208,7 +208,7 @@ export default function HomePage() {
               <Link to="/explore" className="btn-primary" style={{ fontSize: '0.95rem', padding: '0.75rem 2rem' }}>
                 Explore Events <RiArrowRightLine />
               </Link>
-              <Link to="/register" className="btn-secondary" style={{ fontSize: '0.95rem', padding: '0.75rem 2rem' }}>
+              <Link to="/add-event" className="btn-secondary" style={{ fontSize: '0.95rem', padding: '0.75rem 2rem' }}>
                 Create an Event
               </Link>
             </motion.div>
