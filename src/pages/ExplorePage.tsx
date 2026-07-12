@@ -61,6 +61,24 @@ export default function ExplorePage() {
     return () => clearTimeout(t);
   }, [search]);
 
+  // Sync state when URL params change externally (e.g. footer category links)
+  useEffect(() => {
+    const cat = (params.get('category') as EventCategory) ?? '';
+    const s = params.get('search') ?? '';
+    const ci = params.get('city') ?? '';
+    const pr = (params.get('price') as 'all' | 'free' | 'paid') ?? 'all';
+    const so = params.get('sort') ?? 'newest';
+    const pa = Math.max(1, parseInt(params.get('page') ?? '1', 10));
+
+    setCategory(cat);
+    setSearch(s);
+    setSearchDebounced(s);
+    setCity(ci);
+    setPriceFilter(pr);
+    setSort(so);
+    setPage(pa);
+  }, [params]);
+
   const syncParams = useCallback(
     (overrides?: { search?: string; category?: string; city?: string; price?: string; sort?: string; page?: string }) => {
       const next: Record<string, string> = {};
