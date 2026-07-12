@@ -18,6 +18,9 @@ import MyEventsPage from './pages/MyEventsPage';
 import DashboardPage from './pages/DashboardPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
+import NotFoundPage from './pages/NotFoundPage';
+import UnauthorizedPage from './pages/UnauthorizedPage';
+import ForbiddenPage from './pages/ForbiddenPage';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -44,6 +47,39 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
 
   if (!user) {
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+  }
+
+  return <>{children}</>;
+}
+
+function AdminRoute({ children }: { children: ReactNode }) {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div
+            style={{
+              width: '40px', height: '40px', borderRadius: '50%',
+              border: '3px solid rgba(255,255,255,0.08)',
+              borderTopColor: '#EC4899',
+              animation: 'spin 0.8s linear infinite',
+              margin: '0 auto 1rem',
+            }}
+          />
+          <p style={{ color: 'rgba(240,238,255,0.4)', fontSize: '0.875rem' }}>Loading…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" state={{ from: '/dashboard' }} replace />;
+  }
+
+  if (user.role !== 'admin') {
+    return <Navigate to="/forbidden" replace />;
   }
 
   return <>{children}</>;
@@ -80,24 +116,15 @@ function AppRoutes() {
       {/* Protected routes */}
       <Route path="/add-event" element={<Layout><ProtectedRoute><AddEventPage /></ProtectedRoute></Layout>} />
       <Route path="/my-events" element={<Layout><ProtectedRoute><MyEventsPage /></ProtectedRoute></Layout>} />
-      <Route path="/dashboard" element={<Layout><ProtectedRoute><DashboardPage /></ProtectedRoute></Layout>} />
+      <Route path="/dashboard" element={<Layout><AdminRoute><DashboardPage /></AdminRoute></Layout>} />
+
+      {/* Error pages */}
+      <Route path="/unauthorized" element={<Layout><UnauthorizedPage /></Layout>} />
+      <Route path="/forbidden" element={<Layout><ForbiddenPage /></Layout>} />
 
       {/* Fallback */}
       <Route path="*" element={<Layout><NotFoundPage /></Layout>} />
     </Routes>
-  );
-}
-
-function NotFoundPage() {
-  return (
-    <div style={{ minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '2rem' }}>
-      <div>
-        <div className="font-display" style={{ fontSize: '6rem', fontWeight: 800, lineHeight: 1, background: 'linear-gradient(135deg, #EC4899 0%, #8B5CF6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', marginBottom: '1rem' }}>404</div>
-        <h2 className="font-display" style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Page not found</h2>
-        <p style={{ color: 'rgba(240,238,255,0.4)', marginBottom: '2rem', fontSize: '0.9rem' }}>The page you're looking for doesn't exist or has been moved.</p>
-        <a href="/" className="btn-primary" style={{ textDecoration: 'none' }}>Go Home</a>
-      </div>
-    </div>
   );
 }
 
