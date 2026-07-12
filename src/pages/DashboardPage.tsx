@@ -99,8 +99,9 @@ export default function DashboardPage() {
         await updateUserRole(userId, newRole as 'user' | 'admin');
         refreshUsers();
         toast.success(`${name} is now a ${newRole}.`);
-      } catch {
-        toast.error('Failed to update role.');
+      } catch (e: any) {
+        console.error('Role update error:', e);
+        toast.error(`Failed to update role: ${e.message || e}`);
       }
     }
   };
@@ -120,8 +121,9 @@ export default function DashboardPage() {
         await updateUserStatus(userId, newStatus as 'active' | 'suspended');
         refreshUsers();
         toast.success(`${name}'s account has been ${newStatus}.`);
-      } catch {
-        toast.error('Failed to update status.');
+      } catch (e: any) {
+        console.error('Status update error:', e);
+        toast.error(`Failed to update status: ${e.message || e}`);
       }
     }
   };
