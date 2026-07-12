@@ -1,10 +1,10 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { RiSearchLine, RiArrowLeftLine, RiArrowRightLine, RiInboxLine } from 'react-icons/ri';
 import EventCard from '../components/EventCard';
 import SkeletonCard from '../components/SkeletonCard';
-import { useEvents } from '../context/EventsContext';
-import type { EventCategory } from '../types';
+import { eventsAPI, type ApiEvent } from '../services/api';
+import type { Event, EventCategory } from '../types';
 import { EVENT_CATEGORIES } from '../types';
 
 const SORT_OPTIONS = [
@@ -17,10 +17,29 @@ const SORT_OPTIONS = [
 
 const PER_PAGE = 8;
 
+function mapEvent(e: ApiEvent): Event {
+  return {
+    id: e._id,
+    title: e.title,
+    shortDescription: e.shortDescription,
+    description: e.description,
+    category: e.category as EventCategory,
+    eventDate: e.eventDate,
+    eventTime: e.eventTime,
+    venue: e.venue,
+    city: e.city,
+    price: e.price,
+    bannerImage: e.bannerImage,
+    galleryImages: e.galleryImages || [],
+    organizerName: e.organizerName,
+    createdBy: e.createdBy,
+    status: e.status as 'pending' | 'approved' | 'rejected',
+    createdAt: e.createdAt,
+  };
+}
+
 export default function ExplorePage() {
   const [params, setSearchParams] = useSearchParams();
-  const { getApprovedEvents } = useEvents();
-  const [loading, setLoading] = useState(true);
 
   const [search, setSearch] = useState(() => params.get('search') ?? '');
   const [category, setCategory] = useState<EventCategory | ''>(() => (params.get('category') as EventCategory) ?? '');
@@ -29,29 +48,66 @@ export default function ExplorePage() {
   const [sort, setSort] = useState(() => params.get('sort') ?? 'newest');
   const [page, setPage] = useState(() => Math.max(1, parseInt(params.get('page') ?? '1', 10)));
 
-  const allApproved = getApprovedEvents();
+  const [events, setEvents] = useState<Event[]>([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [cities, setCities] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchDebounced, setSearchDebounced] = useState(() => params.get('search') ?? '');
 
+  // Debounce search input
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 800);
+    const t = setTimeout(() => setSearchDebounced(search), 400);
     return () => clearTimeout(t);
-  }, []);
-
-  const cities = useMemo(() => [...new Set(allApproved.map((e) => e.city))].sort(), [allApproved]);
+  }, [search]);
 
   const syncParams = useCallback(
     (overrides?: { search?: string; category?: string; city?: string; price?: string; sort?: string; page?: string }) => {
-      const next = {
-        ...(overrides?.search !== undefined ? { search: overrides.search } : search ? { search } : {}),
-        ...(overrides?.category !== undefined ? { category: overrides.category } : category ? { category } : {}),
-        ...(overrides?.city !== undefined ? { city: overrides.city } : city ? { city } : {}),
-        ...(overrides?.price !== undefined ? { price: overrides.price } : priceFilter !== 'all' ? { price: priceFilter } : {}),
-        ...(overrides?.sort !== undefined ? { sort: overrides.sort } : sort !== 'newest' ? { sort } : {}),
-        ...(overrides?.page !== undefined ? { page: overrides.page } : page > 1 ? { page: String(page) } : {}),
-      };
+      const next: Record<string, string> = {};
+      const s = overrides?.search !== undefined ? overrides.search : search;
+      const c = overrides?.category !== undefined ? overrides.category : category;
+      const ci = overrides?.city !== undefined ? overrides.city : city;
+      const p = overrides?.price !== undefined ? overrides.price : priceFilter;
+      const so = overrides?.sort !== undefined ? overrides.sort : sort;
+      const pa = overrides?.page !== undefined ? overrides.page : String(page);
+
+      if (s) next.search = s;
+      if (c) next.category = c;
+      if (ci) next.city = ci;
+      if (p && p !== 'all') next.price = p;
+      if (so && so !== 'newest') next.sort = so;
+      if (pa && pa !== '1') next.page = pa;
+
       setSearchParams(next, { replace: true });
     },
     [search, category, city, priceFilter, sort, page, setSearchParams]
   );
+
+  const fetchEvents = useCallback(async () => {
+    setLoading(true);
+    try {
+      const query: Record<string, string> = { limit: String(PER_PAGE), page: String(page) };
+      if (searchDebounced) query.search = searchDebounced;
+      if (category) query.category = category;
+      if (city) query.city = city;
+      if (priceFilter !== 'all') query.price = priceFilter;
+      if (sort) query.sort = sort;
+
+      const data = await eventsAPI.getApproved(query);
+      setEvents((data.events || []).map(mapEvent));
+      setTotal(data.total);
+      setTotalPages(data.totalPages);
+      setCities(data.cities || []);
+    } catch (err) {
+      console.error('Failed to fetch events:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [searchDebounced, category, city, priceFilter, sort, page]);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
 
   const updateSearch = (v: string) => { setSearch(v); setPage(1); syncParams({ search: v, page: '1' }); };
   const updateCategory = (v: EventCategory | '') => { setCategory(v); setPage(1); syncParams({ category: v, page: '1' }); };
@@ -65,39 +121,6 @@ export default function ExplorePage() {
     setSearchParams({}, { replace: true });
   };
 
-  const filtered = useMemo(() => {
-    let result = [...allApproved];
-
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      result = result.filter(
-        (e) =>
-          e.title.toLowerCase().includes(q) ||
-          e.organizerName.toLowerCase().includes(q) ||
-          e.city.toLowerCase().includes(q) ||
-          e.venue.toLowerCase().includes(q)
-      );
-    }
-
-    if (category) result = result.filter((e) => e.category === category);
-    if (city) result = result.filter((e) => e.city === city);
-    if (priceFilter === 'free') result = result.filter((e) => e.price === 0);
-    if (priceFilter === 'paid') result = result.filter((e) => e.price > 0);
-
-    switch (sort) {
-      case 'newest': result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()); break;
-      case 'oldest': result.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()); break;
-      case 'price-asc': result.sort((a, b) => a.price - b.price); break;
-      case 'price-desc': result.sort((a, b) => b.price - a.price); break;
-      case 'alpha': result.sort((a, b) => a.title.localeCompare(b.title)); break;
-    }
-
-    return result;
-  }, [allApproved, search, category, city, priceFilter, sort]);
-
-  const totalPages = Math.ceil(filtered.length / PER_PAGE);
-  const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-
   return (
     <div className="page-container" style={{ paddingTop: '3rem', paddingBottom: '4rem' }}>
       {/* Header */}
@@ -107,7 +130,7 @@ export default function ExplorePage() {
           All Events
         </h1>
         <p style={{ color: 'rgba(240,238,255,0.45)', fontSize: '0.9rem' }}>
-          {filtered.length} events found — search, filter, and discover what's next.
+          {total} events found — search, filter, and discover what's next.
         </p>
       </div>
 
@@ -201,7 +224,7 @@ export default function ExplorePage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.25rem' }}>
           {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
         </div>
-      ) : filtered.length === 0 ? (
+      ) : events.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '6rem 0' }}>
           <div style={{ fontSize: '3rem', marginBottom: '1rem' }}><RiInboxLine style={{ color: 'rgba(240,238,255,0.15)', margin: '0 auto' }} /></div>
           <h3 className="font-display" style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>No events found</h3>
@@ -210,7 +233,7 @@ export default function ExplorePage() {
       ) : (
         <>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.25rem', marginBottom: '2.5rem' }}>
-            {paginated.map((event) => <EventCard key={event.id} event={event} />)}
+            {events.map((event) => <EventCard key={event.id} event={event} />)}
           </div>
 
           {/* Pagination */}
