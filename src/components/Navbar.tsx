@@ -23,7 +23,7 @@ export default function Navbar() {
   const handleLogout = async () => {
     await logout();
     setDropdownOpen(false);
-    navigate('/');
+    navigate('/', { replace: true });
   };
 
   const guestLinks = [
