@@ -92,7 +92,7 @@ export default function HomePage() {
   const navigate = useNavigate();
 
   const approvedEvents = getApprovedEvents();
-  const featured = [...approvedEvents].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 8);
+  const featured = [...approvedEvents].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 10);
   const upcoming = [...approvedEvents]
     .filter((e) => new Date(e.eventDate) >= new Date())
     .sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime())
