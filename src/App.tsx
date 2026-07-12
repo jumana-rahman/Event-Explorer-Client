@@ -69,7 +69,7 @@ function AppRoutes() {
       {/* Public routes */}
       <Route path="/" element={<Layout><HomePage /></Layout>} />
       <Route path="/explore" element={<Layout><ExplorePage /></Layout>} />
-      <Route path="/events/:id" element={<Layout><EventDetailPage /></Layout>} />
+      <Route path="/events/:id" element={<Layout><ProtectedRoute><EventDetailPage /></ProtectedRoute></Layout>} />
       <Route path="/about" element={<Layout><AboutPage /></Layout>} />
       <Route path="/contact" element={<Layout><ContactPage /></Layout>} />
 
