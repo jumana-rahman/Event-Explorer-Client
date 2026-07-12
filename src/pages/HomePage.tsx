@@ -242,9 +242,15 @@ export default function HomePage() {
       </section>
 
       {/* Featured Events */}
-      <section style={{ padding: '5rem 0' }}>
+      <motion.section
+        initial="initial"
+        whileInView="animate"
+        viewport={{ once: true, amount: 0.15 }}
+        variants={stagger}
+        style={{ padding: '5rem 0' }}
+      >
         <div className="page-container">
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '2.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <motion.div variants={fadeUp} style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '2.5rem', flexWrap: 'wrap', gap: '1rem' }}>
             <div>
               <div className="section-tag">Featured</div>
               <h2 className="font-display" style={{ fontSize: 'clamp(1.6rem, 3vw, 2.2rem)', fontWeight: 800, letterSpacing: '-0.02em' }}>
@@ -254,9 +260,10 @@ export default function HomePage() {
             <Link to="/explore" className="btn-secondary" style={{ fontSize: '0.875rem' }}>
               View All <RiArrowRightLine />
             </Link>
-          </div>
+          </motion.div>
 
-          <div
+          <motion.div
+            variants={stagger}
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
@@ -264,28 +271,35 @@ export default function HomePage() {
             }}
           >
             {loading
-              ? Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
-              : featured.map((event) => <EventCard key={event.id} event={event} />)}
-          </div>
+              ? Array.from({ length: 10 }).map((_, i) => <SkeletonCard key={i} />)
+              : featured.map((event) => <motion.div key={event.id} variants={fadeUp}><EventCard event={event} /></motion.div>)}
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Categories */}
-      <section style={{ padding: '5rem 0', background: 'rgba(255,255,255,0.015)', borderTop: '1px solid rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+      <motion.section
+        initial="initial"
+        whileInView="animate"
+        viewport={{ once: true, amount: 0.15 }}
+        variants={stagger}
+        style={{ padding: '5rem 0', background: 'rgba(255,255,255,0.015)', borderTop: '1px solid rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+      >
         <div className="page-container">
-          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+          <motion.div variants={fadeUp} style={{ textAlign: 'center', marginBottom: '3rem' }}>
             <div className="section-tag" style={{ justifyContent: 'center' }}>Browse by Category</div>
             <h2 className="font-display" style={{ fontSize: 'clamp(1.6rem, 3vw, 2.2rem)', fontWeight: 800, letterSpacing: '-0.02em' }}>
               Find Your Scene
             </h2>
-          </div>
+          </motion.div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '1rem' }}>
+          <motion.div variants={stagger} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '1rem' }}>
             {EVENT_CATEGORIES.map((cat) => {
               const col = CATEGORY_COLORS[cat];
               return (
-                <button
+                <motion.button
                   key={cat}
+                  variants={fadeUp}
                   onClick={() => navigate(`/explore?category=${cat}`)}
                   style={{
                     background: col.bg,
@@ -300,28 +314,27 @@ export default function HomePage() {
                     alignItems: 'center',
                     gap: '0.625rem',
                   }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-3px)';
-                    e.currentTarget.style.boxShadow = `0 12px 30px ${col.border}`;
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.transform = 'none';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
+                  whileHover={{ y: -4, boxShadow: `0 12px 30px ${col.border}` }}
                 >
                   <span style={{ fontSize: '2rem' }}>{CATEGORY_ICONS[cat]}</span>
                   <span style={{ fontSize: '0.82rem', fontWeight: 600, color: col.text, fontFamily: 'DM Mono, monospace', letterSpacing: '0.02em' }}>{cat}</span>
-                </button>
+                </motion.button>
               );
             })}
-          </div>
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Upcoming Events */}
-      <section style={{ padding: '5rem 0' }}>
+      <motion.section
+        initial="initial"
+        whileInView="animate"
+        viewport={{ once: true, amount: 0.15 }}
+        variants={stagger}
+        style={{ padding: '5rem 0' }}
+      >
         <div className="page-container">
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '2.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <motion.div variants={fadeUp} style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '2.5rem', flexWrap: 'wrap', gap: '1rem' }}>
             <div>
               <div className="section-tag">Coming Soon</div>
               <h2 className="font-display" style={{ fontSize: 'clamp(1.6rem, 3vw, 2.2rem)', fontWeight: 800, letterSpacing: '-0.02em' }}>
@@ -331,41 +344,47 @@ export default function HomePage() {
             <Link to="/explore" className="btn-secondary" style={{ fontSize: '0.875rem' }}>
               See All Upcoming <RiArrowRightLine />
             </Link>
-          </div>
+          </motion.div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1.25rem' }}>
-            {upcoming.map((event) => <EventCard key={event.id} event={event} />)}
-          </div>
+          <motion.div variants={stagger} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1.25rem' }}>
+            {upcoming.map((event) => <motion.div key={event.id} variants={fadeUp}><EventCard event={event} /></motion.div>)}
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Statistics */}
-      <section style={{ padding: '5rem 0', background: 'rgba(255,255,255,0.015)', borderTop: '1px solid rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+      <motion.section
+        initial="initial"
+        whileInView="animate"
+        viewport={{ once: true, amount: 0.1 }}
+        variants={stagger}
+        style={{ padding: '5rem 0', background: 'rgba(255,255,255,0.015)', borderTop: '1px solid rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+      >
         <div className="page-container">
-          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+          <motion.div variants={fadeUp} style={{ textAlign: 'center', marginBottom: '3rem' }}>
             <div className="section-tag" style={{ justifyContent: 'center' }}>Platform Stats</div>
             <h2 className="font-display" style={{ fontSize: 'clamp(1.6rem, 3vw, 2.2rem)', fontWeight: 800, letterSpacing: '-0.02em' }}>
               Growing Every Day
             </h2>
-          </div>
+          </motion.div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '3rem' }}>
+          <motion.div variants={stagger} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '3rem' }}>
             {[
               { value: approvedEvents.length.toString(), label: 'Events Listed', color: '#8B5CF6' },
               { value: computedStats.freeVsPaid[1].value.toString(), label: 'Paid Events', color: '#10B981' },
               { value: computedStats.freeVsPaid[0].value.toString(), label: 'Free Events', color: '#F59E0B' },
               { value: new Set(approvedEvents.map((e) => e.city)).size.toString(), label: 'Cities', color: '#EC4899' },
             ].map((s) => (
-              <div key={s.label} className="stat-card" style={{ textAlign: 'center' }}>
+              <motion.div key={s.label} variants={fadeUp} className="stat-card" style={{ textAlign: 'center' }}>
                 <div className="font-display" style={{ fontSize: '2.2rem', fontWeight: 800, color: s.color, marginBottom: '0.25rem' }}>{s.value}</div>
                 <div style={{ fontSize: '0.8rem', color: 'rgba(240,238,255,0.4)', fontFamily: 'DM Mono, monospace', letterSpacing: '0.04em', textTransform: 'uppercase' }}>{s.label}</div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
+          <motion.div variants={stagger} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
             {/* Bar: Events by category */}
-            <div className="glass-card" style={{ borderRadius: '1rem', padding: '1.5rem' }}>
+            <motion.div variants={fadeUp} className="glass-card" style={{ borderRadius: '1rem', padding: '1.5rem' }}>
               <h3 className="font-display" style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '1.25rem', color: 'rgba(240,238,255,0.7)' }}>Events by Category</h3>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={computedStats.eventsByCategory} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
@@ -378,10 +397,10 @@ export default function HomePage() {
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
-            </div>
+            </motion.div>
 
             {/* Line: Events per month */}
-            <div className="glass-card" style={{ borderRadius: '1rem', padding: '1.5rem' }}>
+            <motion.div variants={fadeUp} className="glass-card" style={{ borderRadius: '1rem', padding: '1.5rem' }}>
               <h3 className="font-display" style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '1.25rem', color: 'rgba(240,238,255,0.7)' }}>Events per Month</h3>
               <ResponsiveContainer width="100%" height={220}>
                 <LineChart data={computedStats.eventsByMonth} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
@@ -392,10 +411,10 @@ export default function HomePage() {
                   <Line type="monotone" dataKey="count" stroke="#EC4899" strokeWidth={2.5} dot={{ fill: '#EC4899', r: 4 }} activeDot={{ r: 6 }} />
                 </LineChart>
               </ResponsiveContainer>
-            </div>
+            </motion.div>
 
             {/* Pie: Free vs Paid */}
-            <div className="glass-card" style={{ borderRadius: '1rem', padding: '1.5rem' }}>
+            <motion.div variants={fadeUp} className="glass-card" style={{ borderRadius: '1rem', padding: '1.5rem' }}>
               <h3 className="font-display" style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '1.25rem', color: 'rgba(240,238,255,0.7)' }}>Free vs Paid Events</h3>
               <ResponsiveContainer width="100%" height={220}>
                 <PieChart>
@@ -413,24 +432,30 @@ export default function HomePage() {
                   </div>
                 ))}
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Testimonials */}
-      <section style={{ padding: '5rem 0' }}>
+      <motion.section
+        initial="initial"
+        whileInView="animate"
+        viewport={{ once: true, amount: 0.15 }}
+        variants={stagger}
+        style={{ padding: '5rem 0' }}
+      >
         <div className="page-container">
-          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+          <motion.div variants={fadeUp} style={{ textAlign: 'center', marginBottom: '3rem' }}>
             <div className="section-tag" style={{ justifyContent: 'center' }}>Community</div>
             <h2 className="font-display" style={{ fontSize: 'clamp(1.6rem, 3vw, 2.2rem)', fontWeight: 800, letterSpacing: '-0.02em' }}>
               Loved by Thousands
             </h2>
-          </div>
+          </motion.div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
+          <motion.div variants={stagger} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
             {TESTIMONIALS.map((t) => (
-              <div key={t.id} className="glass-card" style={{ borderRadius: '1rem', padding: '1.5rem' }}>
+              <motion.div key={t.id} variants={fadeUp} className="glass-card" style={{ borderRadius: '1rem', padding: '1.5rem' }}>
                 <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '1rem' }}>
                   {Array.from({ length: 5 }).map((_, i) => (
                     <span key={i} style={{ color: '#FBBF24', fontSize: '0.85rem' }}>★</span>
@@ -448,34 +473,49 @@ export default function HomePage() {
                     <div style={{ fontSize: '0.75rem', color: 'rgba(240,238,255,0.4)' }}>{t.role}</div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
 
       {/* FAQ */}
-      <section style={{ padding: '5rem 0', background: 'rgba(255,255,255,0.015)', borderTop: '1px solid rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+      <motion.section
+        initial="initial"
+        whileInView="animate"
+        viewport={{ once: true, amount: 0.15 }}
+        variants={stagger}
+        style={{ padding: '5rem 0', background: 'rgba(255,255,255,0.015)', borderTop: '1px solid rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+      >
         <div className="page-container">
-          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+          <motion.div variants={fadeUp} style={{ textAlign: 'center', marginBottom: '3rem' }}>
             <div className="section-tag" style={{ justifyContent: 'center' }}>FAQ</div>
             <h2 className="font-display" style={{ fontSize: 'clamp(1.6rem, 3vw, 2.2rem)', fontWeight: 800, letterSpacing: '-0.02em' }}>
               Common Questions
             </h2>
-          </div>
+          </motion.div>
 
-          <div style={{ maxWidth: '720px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <motion.div variants={stagger} style={{ maxWidth: '720px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {FAQ_ITEMS.map((item, i) => (
-              <AccordionItem key={i} q={item.q} a={item.a} />
+              <motion.div key={i} variants={fadeUp}>
+                <AccordionItem q={item.q} a={item.a} />
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Newsletter */}
-      <section style={{ padding: '5rem 0' }}>
+      <motion.section
+        initial="initial"
+        whileInView="animate"
+        viewport={{ once: true, amount: 0.2 }}
+        variants={fadeUp}
+        style={{ padding: '5rem 0' }}
+      >
         <div className="page-container">
-          <div
+          <motion.div
+            variants={fadeUp}
             style={{
               background: 'linear-gradient(135deg, rgba(236,72,153,0.12) 0%, rgba(139,92,246,0.12) 100%)',
               border: '1px solid rgba(236,72,153,0.2)',
@@ -511,9 +551,9 @@ export default function HomePage() {
             <p style={{ fontSize: '0.75rem', color: 'rgba(240,238,255,0.25)', marginTop: '1rem' }}>
               No spam. Unsubscribe anytime.
             </p>
-          </div>
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
     </div>
   );
 }
