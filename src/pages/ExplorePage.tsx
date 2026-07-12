@@ -15,7 +15,7 @@ const SORT_OPTIONS = [
   { value: 'alpha', label: 'A–Z' },
 ];
 
-const PER_PAGE = 8;
+const PER_PAGE = 10;
 
 function mapEvent(e: ApiEvent): Event {
   return {
