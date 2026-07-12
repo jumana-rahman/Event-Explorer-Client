@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { RiCalendarEventLine, RiMenuLine, RiCloseLine, RiLogoutBoxLine, RiDashboardLine } from 'react-icons/ri';
 
@@ -24,6 +25,24 @@ export default function Navbar() {
     navigate('/', { replace: true });
     await logout();
     setDropdownOpen(false);
+    toast(
+      (t) => (
+        <span style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          Logged out successfully
+          <button
+            onClick={() => { toast.dismiss(t.id); window.location.reload(); }}
+            style={{
+              background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.3)',
+              color: '#A78BFA', borderRadius: '0.375rem', padding: '0.2rem 0.6rem',
+              cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600, fontFamily: 'inherit',
+            }}
+          >
+            Refresh
+          </button>
+        </span>
+      ),
+      { duration: 4000 },
+    );
   };
 
   const guestLinks = [
