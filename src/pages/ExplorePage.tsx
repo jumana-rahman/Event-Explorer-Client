@@ -19,7 +19,7 @@ const PER_PAGE = 8;
 
 function mapEvent(e: ApiEvent): Event {
   return {
-    id: e._id,
+    id: (e.id || e._id) as string,
     title: e.title,
     shortDescription: e.shortDescription,
     description: e.description,

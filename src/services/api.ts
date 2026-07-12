@@ -94,7 +94,8 @@ export const authAPI = {
 // ─── Events API ──────────────────────────────────────────────────
 
 export interface ApiEvent {
-  _id: string;
+  id?: string;
+  _id?: string;
   title: string;
   shortDescription: string;
   description: string;

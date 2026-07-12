@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import type { User, UserRole } from '../types';
-import { authAPI, adminAPI, type AuthUser } from '../services/api';
+import { authAPI, adminAPI } from '../services/api';
 
 interface AuthContextType {
   user: User | null;
@@ -15,9 +15,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-function mapUser(u: AuthUser): User {
+function mapUser(u: any): User {
   return {
-    id: u.id,
+    id: u.id || u._id?.toString?.() || u._id,
     name: u.name,
     email: u.email,
     image: u.image || '',

@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import type { Event, EventStatus, EventCategory } from '../types';
-import { eventsAPI, adminAPI, type ApiEvent } from '../services/api';
+import { eventsAPI, adminAPI } from '../services/api';
 
 interface EventsContextType {
   events: Event[];
@@ -17,9 +17,9 @@ interface EventsContextType {
 
 const EventsContext = createContext<EventsContextType | null>(null);
 
-function mapEvent(e: ApiEvent): Event {
+function mapEvent(e: any): Event {
   return {
-    id: e._id,
+    id: e.id || e._id?.toString?.() || e._id,
     title: e.title,
     shortDescription: e.shortDescription,
     description: e.description,
