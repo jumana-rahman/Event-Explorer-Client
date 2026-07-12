@@ -17,7 +17,7 @@ const PIE_COLORS = ['#FBBF24', '#10B981', '#F87171'];
 
 export default function DashboardPage() {
   const { user, updateUserRole, updateUserStatus, getAllUsers } = useAuth();
-  const { getMyEvents, events, fetchAllEvents, updateEventStatus, deleteEvent } = useEvents();
+  const { getMyEvents, events, fetchAllEvents, updateEventStatus } = useEvents();
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'events'>('overview');
   const [users, setUsers] = useState<User[]>([]);
   const [stats, setStats] = useState<AdminStatsResponse | null>(null);
@@ -121,7 +121,15 @@ export default function DashboardPage() {
 
   const handleDeleteEvent = async (id: string, title: string) => {
     const r = await Swal.fire({ title: 'Delete Event?', text: `Permanently delete "${title}"?`, icon: 'warning', showCancelButton: true, confirmButtonText: 'Delete', background: '#111118', color: '#f0eeff', confirmButtonColor: '#F43F5E', cancelButtonColor: 'rgba(255,255,255,0.08)' });
-    if (r.isConfirmed) { await deleteEvent(id); toast.success('Event deleted.'); }
+    if (r.isConfirmed) {
+      try {
+        await adminAPI.deleteEvent(id);
+        fetchAllEvents();
+        toast.success('Event deleted.');
+      } catch {
+        toast.error('Failed to delete event.');
+      }
+    }
   };
 
   const statusBadge = (status: string) => {
@@ -289,7 +297,7 @@ export default function DashboardPage() {
                         <span style={{ fontSize: '0.78rem', color: 'rgba(240,238,255,0.45)' }}>{ev.category}</span>
                         <div>{statusBadge(ev.status)}</div>
                         <div style={{ display: 'flex', gap: '0.375rem', justifyContent: 'flex-end' }}>
-                          {ev.status === 'approved' && <Link to={`/events/${ev.id}`} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.35rem 0.625rem', borderRadius: '0.375rem', background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.2)', color: '#C4B5FD', fontSize: '0.72rem', textDecoration: 'none' }}><RiEyeLine /></Link>}
+                          <Link to={`/events/${ev.id}`} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.35rem 0.625rem', borderRadius: '0.375rem', background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.2)', color: '#C4B5FD', fontSize: '0.72rem', textDecoration: 'none' }}><RiEyeLine /></Link>
                           {ev.status === 'pending' && (
                             <>
                               <button onClick={() => handleApprove(ev.id, ev.title)} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.35rem 0.625rem', borderRadius: '0.375rem', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', color: '#34D399', fontSize: '0.72rem', cursor: 'pointer', fontFamily: 'inherit' }}><RiCheckLine /> Approve</button>
