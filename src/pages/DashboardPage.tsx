@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
@@ -31,6 +31,10 @@ export default function DashboardPage() {
     if (path.includes('/manage-users')) return 'manage-users';
     return 'overview';
   })();
+
+  if (!isAdmin && activeTab !== 'overview') {
+    return <Navigate to="/forbidden" replace />;
+  }
 
   const setActiveTab = (tab: string) => {
     if (tab === 'overview') navigate('/dashboard');

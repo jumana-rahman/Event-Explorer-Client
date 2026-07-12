@@ -52,39 +52,6 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-function AdminRoute({ children }: { children: ReactNode }) {
-  const { user, isLoading } = useAuth();
-
-  if (isLoading) {
-    return (
-      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div
-            style={{
-              width: '40px', height: '40px', borderRadius: '50%',
-              border: '3px solid rgba(255,255,255,0.08)',
-              borderTopColor: '#EC4899',
-              animation: 'spin 0.8s linear infinite',
-              margin: '0 auto 1rem',
-            }}
-          />
-          <p style={{ color: 'rgba(240,238,255,0.4)', fontSize: '0.875rem' }}>Loading…</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Navigate to="/login" state={{ from: '/dashboard' }} replace />;
-  }
-
-  if (user.role !== 'admin') {
-    return <Navigate to="/forbidden" replace />;
-  }
-
-  return <>{children}</>;
-}
-
 function Layout({ children }: { children: ReactNode }) {
   return (
     <>
@@ -112,8 +79,8 @@ function AppRoutes() {
       {/* Protected routes */}
       <Route path="/add-event" element={<Layout><ProtectedRoute><AddEventPage /></ProtectedRoute></Layout>} />
       <Route path="/my-events" element={<Layout><ProtectedRoute><MyEventsPage /></ProtectedRoute></Layout>} />
-      <Route path="/dashboard" element={<Layout><AdminRoute><DashboardPage /></AdminRoute></Layout>} />
-      <Route path="/dashboard/*" element={<Layout><AdminRoute><DashboardPage /></AdminRoute></Layout>} />
+      <Route path="/dashboard" element={<Layout><ProtectedRoute><DashboardPage /></ProtectedRoute></Layout>} />
+      <Route path="/dashboard/*" element={<Layout><ProtectedRoute><DashboardPage /></ProtectedRoute></Layout>} />
 
       {/* Error pages */}
       <Route path="/unauthorized" element={<Layout><UnauthorizedPage /></Layout>} />
