@@ -53,15 +53,14 @@ export default function AddEventPage() {
   };
 
   const onSubmit = async (data: FormValues) => {
-    if (!bannerFile) {
-      toast.error('Please upload a banner image.');
-      return;
-    }
     setSubmitting(true);
     try {
-      setUploadingImg(true);
-      const bannerImage = await uploadImageToImgbb(bannerFile);
-      setUploadingImg(false);
+      let bannerImage = '';
+      if (bannerFile) {
+        setUploadingImg(true);
+        bannerImage = await uploadImageToImgbb(bannerFile);
+        setUploadingImg(false);
+      }
 
       await eventsAPI.create({
         ...data,
@@ -224,7 +223,7 @@ export default function AddEventPage() {
           </div>
 
           <div>
-            <label className="label-text"><RiImageLine style={{ display: 'inline', marginRight: '0.3rem' }} />Banner Image *</label>
+            <label className="label-text"><RiImageLine style={{ display: 'inline', marginRight: '0.3rem' }} />Banner Image</label>
             <input
               ref={fileRef}
               type="file"

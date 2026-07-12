@@ -221,7 +221,7 @@ export default function ExplorePage() {
 
       {/* Results */}
       {loading ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.25rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1.25rem' }}>
           {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
         </div>
       ) : events.length === 0 ? (
@@ -232,7 +232,7 @@ export default function ExplorePage() {
         </div>
       ) : (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.25rem', marginBottom: '2.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '2.5rem' }}>
             {events.map((event) => <EventCard key={event.id} event={event} />)}
           </div>
 

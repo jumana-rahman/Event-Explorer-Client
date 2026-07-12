@@ -21,6 +21,9 @@ import ContactPage from './pages/ContactPage';
 import NotFoundPage from './pages/NotFoundPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import ForbiddenPage from './pages/ForbiddenPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsPage from './pages/TermsPage';
+import CookiePolicyPage from './pages/CookiePolicyPage';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -68,7 +71,7 @@ function AppRoutes() {
       {/* Public routes */}
       <Route path="/" element={<Layout><HomePage /></Layout>} />
       <Route path="/explore" element={<Layout><ExplorePage /></Layout>} />
-      <Route path="/events/:id" element={<Layout><ProtectedRoute><EventDetailPage /></ProtectedRoute></Layout>} />
+      <Route path="/events/:id" element={<Layout><EventDetailPage /></Layout>} />
       <Route path="/about" element={<Layout><AboutPage /></Layout>} />
       <Route path="/contact" element={<Layout><ContactPage /></Layout>} />
 
@@ -83,6 +86,9 @@ function AppRoutes() {
       <Route path="/dashboard/*" element={<Layout><ProtectedRoute><DashboardPage /></ProtectedRoute></Layout>} />
 
       {/* Error pages */}
+      <Route path="/privacy" element={<Layout><PrivacyPolicyPage /></Layout>} />
+      <Route path="/terms" element={<Layout><TermsPage /></Layout>} />
+      <Route path="/cookies" element={<Layout><CookiePolicyPage /></Layout>} />
       <Route path="/unauthorized" element={<Layout><UnauthorizedPage /></Layout>} />
       <Route path="/forbidden" element={<Layout><ForbiddenPage /></Layout>} />
 

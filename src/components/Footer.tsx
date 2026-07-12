@@ -123,16 +123,20 @@ export default function Footer() {
             © 2025 Event Explorer. All rights reserved.
           </p>
           <div style={{ display: 'flex', gap: '1.5rem' }}>
-            {['Privacy Policy', 'Terms of Service', 'Cookie Policy'].map((item) => (
-              <a
-                key={item}
-                href="#"
+            {[
+              { to: '/privacy', label: 'Privacy Policy' },
+              { to: '/terms', label: 'Terms of Service' },
+              { to: '/cookies', label: 'Cookie Policy' },
+            ].map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
                 style={{ color: 'rgba(240,238,255,0.3)', fontSize: '0.8rem', textDecoration: 'none', transition: 'color 0.2s' }}
                 onMouseOver={(e) => (e.currentTarget.style.color = 'rgba(240,238,255,0.6)')}
                 onMouseOut={(e) => (e.currentTarget.style.color = 'rgba(240,238,255,0.3)')}
               >
-                {item}
-              </a>
+                {link.label}
+              </Link>
             ))}
           </div>
         </div>

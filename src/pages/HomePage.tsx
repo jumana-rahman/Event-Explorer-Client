@@ -259,7 +259,7 @@ export default function HomePage() {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
               gap: '1.25rem',
             }}
           >
@@ -333,7 +333,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.25rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1.25rem' }}>
             {upcoming.map((event) => <EventCard key={event.id} event={event} />)}
           </div>
         </div>
@@ -428,7 +428,7 @@ export default function HomePage() {
             </h2>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
             {TESTIMONIALS.map((t) => (
               <div key={t.id} className="glass-card" style={{ borderRadius: '1rem', padding: '1.5rem' }}>
                 <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '1rem' }}>

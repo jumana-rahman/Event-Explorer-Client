@@ -197,7 +197,7 @@ export default function EventDetailPage() {
             <h2 className="font-display" style={{ fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '1.5rem' }}>
               More in {event.category}
             </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.25rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1.25rem' }}>
               {related.map((e) => <EventCard key={e.id} event={e} />)}
             </div>
           </div>
