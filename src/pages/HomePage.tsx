@@ -245,7 +245,7 @@ export default function HomePage() {
       <motion.section
         initial="initial"
         whileInView="animate"
-        viewport={{ once: true, amount: 0.15 }}
+        viewport={{ once: false, amount: 0.1 }}
         variants={stagger}
         style={{ padding: '5rem 0' }}
       >
