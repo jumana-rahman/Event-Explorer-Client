@@ -95,10 +95,6 @@ function Layout({ children }: { children: ReactNode }) {
   );
 }
 
-function AuthLayout({ children }: { children: ReactNode }) {
-  return <>{children}</>;
-}
-
 function AppRoutes() {
   return (
     <Routes>
@@ -110,8 +106,8 @@ function AppRoutes() {
       <Route path="/contact" element={<Layout><ContactPage /></Layout>} />
 
       {/* Auth routes */}
-      <Route path="/login" element={<AuthLayout><LoginPage /></AuthLayout>} />
-      <Route path="/register" element={<AuthLayout><RegisterPage /></AuthLayout>} />
+      <Route path="/login" element={<Layout><LoginPage /></Layout>} />
+      <Route path="/register" element={<Layout><RegisterPage /></Layout>} />
 
       {/* Protected routes */}
       <Route path="/add-event" element={<Layout><ProtectedRoute><AddEventPage /></ProtectedRoute></Layout>} />
