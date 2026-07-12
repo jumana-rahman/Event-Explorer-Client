@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { RiCalendarLine, RiMapPinLine, RiUser3Line, RiTimeLine, RiArrowLeftLine, RiTicketLine, RiShareLine } from 'react-icons/ri';
+import { RiCalendarLine, RiMapPinLine, RiUser3Line, RiTimeLine, RiArrowLeftLine, RiTicketLine, RiShareLine, RiCloseLine, RiCheckLine } from 'react-icons/ri';
 import toast from 'react-hot-toast';
 import { eventsAPI, type ApiEvent } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import EventCard from '../components/EventCard';
 import { CATEGORY_COLORS } from '../data/mockData';
 import type { Event, EventCategory } from '../types';
@@ -35,10 +36,12 @@ function formatDate(d: string) {
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [event, setEvent] = useState<Event | null>(null);
   const [related, setRelated] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -76,6 +79,14 @@ export default function EventDetailPage() {
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href).catch(() => {});
     toast.success('Link copied to clipboard!');
+  };
+
+  const handleGetTickets = () => {
+    if (!user) {
+      navigate('/login', { state: { from: `/events/${id}` } });
+      return;
+    }
+    setShowModal(true);
   };
 
   return (
@@ -181,7 +192,7 @@ export default function EventDetailPage() {
                 ))}
               </div>
 
-              <button className="btn-primary" style={{ width: '100%', justifyContent: 'center', marginBottom: '0.625rem', padding: '0.75rem' }}>
+              <button onClick={handleGetTickets} className="btn-primary" style={{ width: '100%', justifyContent: 'center', marginBottom: '0.625rem', padding: '0.75rem' }}>
                 <RiTicketLine /> Get Tickets
               </button>
               <button onClick={handleShare} className="btn-secondary" style={{ width: '100%', justifyContent: 'center', padding: '0.75rem', fontSize: '0.875rem' }}>
@@ -209,6 +220,60 @@ export default function EventDetailPage() {
           .detail-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
+
+      {/* Ticket Purchased Modal */}
+      {showModal && (
+        <div
+          onClick={() => setShowModal(false)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '1rem',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#111118', border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: '1rem', padding: '2.5rem', maxWidth: '400px', width: '100%',
+              textAlign: 'center', position: 'relative',
+            }}
+          >
+            <button
+              onClick={() => setShowModal(false)}
+              style={{
+                position: 'absolute', top: '0.75rem', right: '0.75rem',
+                background: 'none', border: 'none', color: 'rgba(240,238,255,0.3)',
+                cursor: 'pointer', fontSize: '18px', padding: '0.25rem',
+              }}
+            >
+              <RiCloseLine />
+            </button>
+            <div style={{
+              width: '56px', height: '56px', borderRadius: '50%',
+              background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto 1.25rem',
+            }}>
+              <RiCheckLine style={{ fontSize: '28px', color: '#10B981' }} />
+            </div>
+            <h2 className="font-display" style={{ fontSize: '1.3rem', fontWeight: 800, color: '#f0eeff', marginBottom: '0.5rem' }}>
+              Tickets Purchased!
+            </h2>
+            <p style={{ color: 'rgba(240,238,255,0.45)', fontSize: '0.875rem', lineHeight: 1.7, marginBottom: '1.5rem' }}>
+              Your tickets for <strong style={{ color: '#f0eeff' }}>{event.title}</strong> have been reserved. A confirmation has been sent to your email.
+            </p>
+            <button
+              onClick={() => setShowModal(false)}
+              className="btn-primary"
+              style={{ width: '100%', justifyContent: 'center', padding: '0.75rem' }}
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
