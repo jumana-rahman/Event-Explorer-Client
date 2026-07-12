@@ -197,20 +197,18 @@ export default function MyEventsPage() {
                   </td>
                   <td style={{ padding: '0.875rem 1rem', textAlign: 'right', whiteSpace: 'nowrap' }}>
                     <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                      {event.status === 'approved' && (
-                        <Link
-                          to={`/events/${event.id}`}
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: '0.3rem',
-                            padding: '0.4rem 0.75rem', borderRadius: '0.4rem',
-                            background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.2)',
-                            color: '#C4B5FD', fontSize: '0.78rem', fontWeight: 500, textDecoration: 'none',
-                            transition: 'all 0.2s',
-                          }}
-                        >
-                          <RiEyeLine /> View
-                        </Link>
-                      )}
+                      <Link
+                        to={`/events/${event.id}`}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '0.3rem',
+                          padding: '0.4rem 0.75rem', borderRadius: '0.4rem',
+                          background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.2)',
+                          color: '#C4B5FD', fontSize: '0.78rem', fontWeight: 500, textDecoration: 'none',
+                          transition: 'all 0.2s',
+                        }}
+                      >
+                        <RiEyeLine /> View
+                      </Link>
                       <button
                         onClick={() => handleDelete(event.id, event.title)}
                         style={{
